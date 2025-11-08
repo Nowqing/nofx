@@ -1,0 +1,41 @@
+# 工作流名称
+name: 自动同步上游仓库代码
+
+# 触发条件：
+# 1. 每天 UTC 时间 0 点自动运行（可修改 cron 表达式）
+# 2. 手动在 GitHub 页面触发运行
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # 每天同步一次，格式：分 时 日 月 周（UTC 时间）
+  workflow_dispatch:  # 允许手动触发
+
+# 执行步骤
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest  # 运行环境（免费的 Ubuntu 服务器）
+    steps:
+      # 1. 检出你 Fork 仓库的代码
+      - name: 检出本地代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整历史，避免合并冲突
+
+      # 2. 配置 Git 身份（用于提交同步记录）
+      - name: 配置 Git 用户名和邮箱
+        run: |
+          git config --global user.name "Nowqing"
+          git config --global user.email "1012186570@qq.com"
+
+      # 3. 添加上游仓库并同步最新代码
+      - name: 同步上游仓库
+        run: |
+          # 添加上游仓库（替换为原仓库地址）
+          git remote add upstream https://github.com/NoFxAiOS/nofx.git || true
+          # 拉取上游最新代码
+          git fetch upstream
+          # 切换到 dev 分支（根据你的仓库分支名修改，如 master）
+          git checkout main
+          # 合并上游分支（若有冲突，会自动失败，需手动处理）
+          git merge upstream/dev --allow-unrelated-histories
+          # 推送同步后的代码到你的 Fork 仓库
+          git push origin dev
